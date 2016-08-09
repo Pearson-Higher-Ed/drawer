@@ -29,15 +29,17 @@ function Drawer(el){
 		el = document.querySelector(el);
 	}
 
-	var triggerSelector =
-		'[data-toggle="o-drawer"][href="#' + el.id + '"],' +
-		'[data-toggle="o-drawer"][data-target="#' + el.id + '"]';
+//	var triggerSelector =
+//		'[data-toggle="o-drawer"][href="#' + el.id + '"],' +
+//		'[data-toggle="o-drawer"][data-target="#' + el.id + '"]';
+//      this.trigger = document.querySelectorAll(triggerSelector);
+//	this.target.setAttribute('aria-expanded', false);
 
 	this.target = el;
 	this.currentTarget = false;
         this.close_button;
-        this.trigger;
-	//this.trigger = document.querySelectorAll(triggerSelector);
+        this.trigger; //what opened the drawer
+        this.target.style.display ='none'; //don't tab through hidden drawers
 	Drawer.cache.set(el, this);
 
 	this.target.classList.add('o-drawer');
@@ -49,6 +51,8 @@ function Drawer(el){
 		this.target.classList.add('o-drawer-left');
 	}
 
+        // this is flawed, it will also catch focusables inside
+        // display:none/visibility-hidden containers
         this.focusables = Array.prototype.slice.call(this.target.querySelectorAll(
           '[tabindex="0"], a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])'));
 
@@ -62,7 +66,6 @@ function Drawer(el){
         this.first_focusable = this.close_button || this.focusables[0];
         this.last_focusable = this.focusables[this.focusables.length-1];
 
-//	this.target.setAttribute('aria-expanded', false);
 
 	if(!Drawer.delegate){
 		var delegate = new DomDelegate(document.body);
@@ -73,6 +76,7 @@ function Drawer(el){
 			var trigger = getTrigger(e.target);
 			var target = getTargetFromTrigger(trigger);
 
+                  // why looping? with href we can only get 1 element because it's an id
 			for(var i=0, l = target.length; i<l; i++){
 				var t = target[i];
 				var drawer = Drawer.cache.get(t);
@@ -142,6 +146,10 @@ Drawer.destroy = function () {
  */
 
 Drawer.prototype.open = function(){
+    if (this.target.classList.contains('o-drawer-open')) {
+      // should we re-focus into the Drawer?
+      return this;
+    }
     this.currentTarget = true;
     this.trigger = document.activeElement; 
     var control = this.trigger
@@ -177,21 +185,35 @@ Drawer.prototype.open = function(){
 * @return {Drawer} self, for chainability
 */
 
-Drawer.prototype.close = function(){
-//      this.currentTarget = false;
-	this.target.classList.remove('o-drawer-open');
-//	this.target.setAttribute('aria-expanded', true);
-	dispatchEvent(this.target, 'oDrawer.close');
-	if(this.target.classList.contains('o-drawer-animated')){
-		var t = this.target;
-		setTimeout(function(){
-			t.style.display = 'none';
-		}, 400);
-	}else{
-		this.target.style.display = 'none';
-	}
-//      if (this.trigger) {this.trigger.focus();}
-	return this;
+Drawer.prototype.close = function() {  
+    if (!this.target.classList.contains('o-drawer-open')) {
+      this.trigger = document.activeElement;
+      return this;
+    }
+    this.target.classList.remove('o-drawer-open');
+    this.trigger.setAttribute('aria-expanded', 'false');
+
+    var t = this.target
+        ,closed_from_within = containedIn(document.activeElement, t);
+
+    if(t.classList.contains('o-drawer-animated')){
+      setTimeout(function(){
+        t.style.display = 'none';
+      }, 400);
+    }
+    else {
+        t.style.display = 'none';
+    }
+
+    // for the weird instance where drawer is closed externally, 
+    // don't focus on the original trigger
+    if (closed_from_within) {
+      this.trigger.focus();
+    }
+
+    dispatchEvent(this.target, 'oDrawer.close');
+
+    return this;
 };
 
 /**
@@ -211,9 +233,12 @@ Drawer.prototype.toggle = function(){
 };
 
 /**
-* Traps focus in the Drawer
+* Traps tab-focus in the Drawer
 */
 
+// this fails if spatial focus is used!!!
+// please use aria-hidden on the rest of the page if possible
+// or otherwise disable all non-Drawer focusables
 Drawer.prototype.trapFocus = function(e) {
     var t = this.target
         ,active = document.activeElement
@@ -246,6 +271,11 @@ Drawer.prototype.trapFocus = function(e) {
     }
 };
 
+
+function containedIn(child, t) {
+    while ((child = child.parentNode) && (child !== t));
+    return child;
+}
 
 function selectAll(element){
 	if(!element){
