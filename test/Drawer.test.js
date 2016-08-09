@@ -5,9 +5,9 @@ var expect = require('expect.js');
 
 var Drawer = require('./../src/js/Drawer');
 
-function isExpanded(element) {
-	return element.classList.contains('o-drawer-open') &&
-		element.getAttribute('aria-expanded') === 'true';
+function isExpanded(element, trigger) {
+    return element.classList.contains('o-drawer-open') &&
+        trigger.getAttribute('aria-expanded') === 'true';
 }
 
 describe('Drawer', function() {
@@ -82,37 +82,44 @@ describe('Drawer', function() {
 	});
 
 
-	describe('open()', function(done) {
-		it('should show the element', function () {
-			var element = document.createElement('div');
-			document.body.appendChild(element);
+        describe('open()', function(done) {
+            it('should show the element and set the correct states', function () {
+                var element = document.createElement('div')
+                    ,trigger = document.createElement('button');
 
-			var drawer = new Drawer(element);
+                element.id="foo";
+                trigger.setAttribute('aria-expanded', 'false');
+                trigger.setAttribute('data-open','o-drawer');
+                trigger.setAttribute('data-target','#foo');
 
-			expect(isExpanded(element)).to.be(false);
+                document.body.appendChild(element);
+                document.body.appendChild(trigger);
 
-			drawer.open();
-			setTimeout(function(){
-				expect(isExpanded(element)).to.be(true);
-				done();
-			}, 100);
+                var drawer = new Drawer(element);
 
-		});
+                expect(isExpanded(element, trigger)).to.be(false);
 
-		it('should emit oDrawer.open', function (done) {
-			var element = document.createElement('div');
-			document.body.appendChild(element);
+                trigger.click();
+                setTimeout(function(){
+                    expect(isExpanded(element,trigger)).to.be(true);
+                    done();
+                }, 100);
+            });
 
-			var drawer = new Drawer(element);
+            it('should emit oDrawer.open', function (done) {
+                var element = document.createElement('div');
+                document.body.appendChild(element);
 
-			element.addEventListener('oDrawer.open', function (e) {
-				expect(e.target).to.be(element);
-				done();
-			});
+                var drawer = new Drawer(element);
 
-			drawer.open();
-		});
-	});
+                element.addEventListener('oDrawer.open', function (e) {
+                    expect(e.target).to.be(element);
+                    done();
+                });
+
+                drawer.open();
+            });
+        });
 
 	describe('close()', function() {
 		it('should hide the element', function () {

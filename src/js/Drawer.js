@@ -46,7 +46,20 @@ function Drawer(el){
 	if(!hasAlignmentClass){
 		this.target.classList.add('o-drawer-left');
 	}
-	this.target.setAttribute('aria-expanded', false);
+
+        this.focusables = Array.prototype.slice.call(this.target.querySelectorAll(
+          '[tabindex="0"], a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])'));
+
+        for (var i=0, l=this.focusables.length; i<l; i++) {
+          var f = this.focusables[i];
+          if (f.hasAttribute('data-close')) {
+            this.close_button = f;
+            break;
+          }
+        }
+        this.first_focusable = this.close_button || this.focusables[0];
+
+//	this.target.setAttribute('aria-expanded', false);
 
 	if(!Drawer.delegate){
 		var delegate = new DomDelegate(document.body);
@@ -126,22 +139,31 @@ Drawer.destroy = function () {
  */
 
 Drawer.prototype.open = function(){
-	this.currentTarget = true;
-	if(this.target.classList.contains('o-drawer-right')) {
-		dispatchEvent(this.target, 'o.Drawer.RightDrawer');
-	}
-	if(this.target.classList.contains('o-drawer-left')) {
-		dispatchEvent(this.target, 'o.Drawer.LeftDrawer');
-	}
-	this.target.style.display = 'block';
-	var t= this.target;
-	setTimeout(function(){
-		t.classList.add('o-drawer-open');
-		t.setAttribute('aria-expanded', true);
-	}, 50);
+    this.currentTarget = true;
+    this.trigger = document.activeElement; 
+    var control = this.trigger
+        ,t = this.target
+        ,close_button = this.close_button
+        ,first_focusable = this.first_focusable;
 
-	dispatchEvent(this.target, 'oDrawer.open');
-	return this;
+    if(t.classList.contains('o-drawer-right')) {
+      dispatchEvent(t, 'o.Drawer.RightDrawer');
+    }
+    if(t.classList.contains('o-drawer-left')) {
+      dispatchEvent(t, 'o.Drawer.LeftDrawer');
+    }
+    t.style.display = 'block';
+
+    setTimeout(function(control, first_focusable){
+      t.classList.add('o-drawer-open');
+      control.setAttribute('aria-expanded', 'true');
+      first_focusable.focus();
+    }.bind(this, control, first_focusable), 50);
+
+    //DES-372: add a listener for [shift]tabs, trap focus
+
+    dispatchEvent(t, 'oDrawer.open');
+    return this;
 };
 
 /**
@@ -151,7 +173,7 @@ Drawer.prototype.open = function(){
 
 Drawer.prototype.close = function(){
 	this.target.classList.remove('o-drawer-open');
-	this.target.setAttribute('aria-expanded', true);
+//	this.target.setAttribute('aria-expanded', true);
 	dispatchEvent(this.target, 'oDrawer.close');
 	if(this.target.classList.contains('o-drawer-animated')){
 		var t = this.target;
