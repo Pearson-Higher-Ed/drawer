@@ -35,7 +35,9 @@ function Drawer(el){
 
 	this.target = el;
 	this.currentTarget = false;
-	this.trigger = document.querySelectorAll(triggerSelector);
+        this.close_button;
+        this.trigger;
+	//this.trigger = document.querySelectorAll(triggerSelector);
 	Drawer.cache.set(el, this);
 
 	this.target.classList.add('o-drawer');
@@ -58,6 +60,7 @@ function Drawer(el){
           }
         }
         this.first_focusable = this.close_button || this.focusables[0];
+        this.last_focusable = this.focusables[this.focusables.length-1];
 
 //	this.target.setAttribute('aria-expanded', false);
 
@@ -160,7 +163,10 @@ Drawer.prototype.open = function(){
       first_focusable.focus();
     }.bind(this, control, first_focusable), 50);
 
-    //DES-372: add a listener for [shift]tabs, trap focus
+    var _this = this;
+    t.addEventListener('keydown', function(e) {
+      _this.trapFocus(e);
+    });
 
     dispatchEvent(t, 'oDrawer.open');
     return this;
@@ -172,6 +178,7 @@ Drawer.prototype.open = function(){
 */
 
 Drawer.prototype.close = function(){
+//      this.currentTarget = false;
 	this.target.classList.remove('o-drawer-open');
 //	this.target.setAttribute('aria-expanded', true);
 	dispatchEvent(this.target, 'oDrawer.close');
@@ -183,6 +190,7 @@ Drawer.prototype.close = function(){
 	}else{
 		this.target.style.display = 'none';
 	}
+//      if (this.trigger) {this.trigger.focus();}
 	return this;
 };
 
@@ -201,6 +209,43 @@ Drawer.prototype.toggle = function(){
 	}
 	return this;
 };
+
+/**
+* Traps focus in the Drawer
+*/
+
+Drawer.prototype.trapFocus = function(e) {
+    var t = this.target
+        ,active = document.activeElement
+        ,last_focusable = this.last_focusable
+        ,first_focusable = this.first_focusable
+        ,code = e.keyCode;
+
+    // esc
+    if (code===27) {
+      this.close();
+    }
+
+    // tab
+    if (code===9) {
+      if (this.focusables.length === 1) {
+        e.preventDefault();
+      } 
+      if (!e.shiftKey) {
+        if (active === last_focusable) {
+          e.preventDefault();
+          first_focusable.focus();
+        }
+      }
+      else {
+        if (active === first_focusable) {
+          e.preventDefault();
+          last_focusable.focus();
+        }
+      }
+    }
+};
+
 
 function selectAll(element){
 	if(!element){
