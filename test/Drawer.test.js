@@ -9,6 +9,9 @@ function isExpanded(element, trigger) {
     return element.classList.contains('o-drawer-open') &&
         trigger.getAttribute('aria-expanded') === 'true';
 }
+function isFocussed(close_button) {
+    return document.activeElement===close_button;
+}
 
 describe('Drawer', function() {
 
@@ -85,15 +88,20 @@ describe('Drawer', function() {
         describe('open()', function(done) {
             it('should show the element and set the correct states', function () {
                 var element = document.createElement('div')
-                    ,trigger = document.createElement('button');
+                    ,trigger = document.createElement('button')
+                    ,close = document.createElement('button');
 
                 element.id="foo";
+
                 trigger.setAttribute('aria-expanded', 'false');
                 trigger.setAttribute('data-open','o-drawer');
                 trigger.setAttribute('data-target','#foo');
 
+                close.setAttribute('data-close', 'o-drawer');
+
                 document.body.appendChild(element);
                 document.body.appendChild(trigger);
+                element.appendChild(close);
 
                 var drawer = new Drawer(element);
 
@@ -102,6 +110,7 @@ describe('Drawer', function() {
                 trigger.click();
                 setTimeout(function(){
                     expect(isExpanded(element,trigger)).to.be(true);
+                    expect(isFocussed(close)).to.be(true);
                     done();
                 }, 100);
             });
