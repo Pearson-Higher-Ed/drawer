@@ -9,8 +9,38 @@ function isExpanded(element, trigger) {
     return element.classList.contains('o-drawer-open') &&
         trigger.getAttribute('aria-expanded') === 'true';
 }
+
 function isFocussed(close_button) {
-    return document.activeElement===close_button;
+    return document.activeElement === close_button;
+}
+
+function lastFocusableRemains(drawer) {
+    var last = drawer.last_focusable
+        ,focusables = Array.prototype.slice.call(drawer.target.querySelectorAll(
+          '[tabindex="0"], a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])'));
+
+    return last === focusables[focusables.length-1];
+}
+
+function addFocusables(newbutton) {
+    var fraggle = document.createDocumentFragment()
+        ,button = document.createElement('button')
+        ,a = document.createElement('a')
+        ,h3 = document.createElement('h3')
+        ,div = newbutton.parentElement;
+
+    button.textContent = 'button text';
+
+    a.href='#f';
+    a.textContent = 'text';
+
+    h3.setAttribute('tabindex','0');
+    h3.textContent = 'heading';
+
+    fraggle.appendChild(button);
+    fraggle.appendChild(a);
+    fraggle.appendChild(h3);
+    div.appendChild(fraggle);
 }
 
 describe('Drawer', function() {
@@ -105,14 +135,47 @@ describe('Drawer', function() {
 
                 var drawer = new Drawer(element);
 
-                expect(isExpanded(element, trigger)).to.be(false);
-
                 trigger.click();
                 setTimeout(function(){
                     expect(isExpanded(element,trigger)).to.be(true);
                     expect(isFocussed(close)).to.be(true);
                     done();
                 }, 100);
+            });
+
+            //this test is only if we don't end up needing our own special lastFocusable.
+            it('should keep track of the last focusable', function () {
+                var element = document.createElement('div')
+                    ,close = document.createElement('button')
+                    ,div = document.createElement('div')
+                    ,newbutton = document.createElement('button')
+                    ,a = document.createElement('a');
+
+                element.id="foo";
+
+                close.setAttribute('data-close', 'o-drawer');
+                a.href='#b';
+
+                div.appendChild(newbutton);
+                document.body.appendChild(element);
+                element.appendChild(close);
+                element.appendChild(div);
+                element.appendChild(a);
+
+                newbutton.addEventListener('click', function() {
+                    addFocusables(newbutton);
+                });
+
+                var drawer = new Drawer(element);
+                expect(lastFocusableRemains(drawer)).to.be(true);
+
+                drawer.open();
+                setTimeout(function(drawer, newbutton){
+                    newbutton.click();
+                    expect(lastFocusableRemains(drawer)).to.be(true);
+                    expect(drawer.lastFocusable.href).to.equal('#b');
+                    done();
+                }.bind(this, drawer, newbutton), 100);
             });
 
             it('should emit oDrawer.open', function (done) {
@@ -192,15 +255,25 @@ describe('Drawer', function() {
 
 	describe('toggle()', function(done) {
 		it('should toggle the element open and close', function () {
-			var element = document.createElement('div');
-			document.body.appendChild(element);
+                    var element = document.createElement('div')
+                        ,trigger = document.createElement('button');
 
-			var drawer = new Drawer(element);
-			drawer.toggle();
+                        element.id="foo";
+
+                        trigger.setAttribute('aria-expanded', 'false');
+                        trigger.setAttribute('data-toggle','o-drawer');
+                        trigger.setAttribute('data-target','#foo');
+
+                        document.body.appendChild(element);
+                        document.body.appendChild(trigger);
+
+                        var drawer = new Drawer(element);
+
+                        trigger.click();
 			setTimeout(function(){
-				expect(isExpanded(element)).to.be(true);
-				drawer.toggle();
-				expect(isExpanded(element)).to.be(false);
+                                expect(isExpanded(element,trigger)).to.be(true);
+				trigger.click();
+				expect(isExpanded(element,trigger)).to.be(false);
 				done();
 			}, 100);
 
