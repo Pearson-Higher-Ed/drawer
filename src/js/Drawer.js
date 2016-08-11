@@ -64,6 +64,7 @@ function Drawer(el){
           }
         }
         this.first_focusable = this.close_button || this.focusables[0];
+        // this might fail if new focusables appended
         this.last_focusable = this.focusables[this.focusables.length-1];
 
 
@@ -100,7 +101,6 @@ function Drawer(el){
 		}
 		_this.currentTarget = false;
 	});
-
 	document.addEventListener('o.Drawer.LeftDrawer', function() {
 		if(_this.target.classList.contains('o-drawer-left') && !_this.currentTarget) {
 			_this.close();
