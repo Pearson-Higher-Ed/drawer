@@ -106,6 +106,7 @@ Drawer.destroy = function() {
   }
 };
 
+
 /**
  * Opens the Drawer
  * Sets aria-expanded on the triggering control and saves trigger
@@ -211,27 +212,6 @@ Drawer.prototype.toggle = function() {
   var visible = this.target.classList.contains('o-drawer-open');
   (visible && this.close()) || this.open();
   return this;
-};
-
-/**
- * Places focus on close button after clicking back button
- */
-Drawer.prototype.handleFocusOnBack = function() {
-  this.target.removeChild(this.trap);
-  this.focusables = Array.prototype.slice.call(this.target.querySelectorAll(
-      '[tabindex="0"], a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])'));
-  for (var i=0, l=this.focusables.length; i<l; i++) {
-    var f = this.focusables[i];
-    if (f.hasAttribute('data-close')) {
-      this.closeButton = f;
-      break;
-    }
-  }
-  if (this.focusables.length) {
-    this.firstFocusable = this.closeButton || this.focusables[0];
-    this.firstFocusable.focus();
-  }
-  this.target.appendChild(this.trap);
 };
 
 /**
