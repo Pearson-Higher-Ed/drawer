@@ -106,6 +106,7 @@ Drawer.destroy = function() {
   }
 };
 
+
 /**
  * Opens the Drawer
  * Sets aria-expanded on the triggering control and saves trigger
@@ -126,6 +127,7 @@ Drawer.prototype.open = function() {
       firstFocusable = this.firstFocusable;
 
   t.style.display = 'block';
+
   if (t.classList.contains('o-drawer-animated')) {
     setTimeout(function() {
       setStates(t, control, firstFocusable);
